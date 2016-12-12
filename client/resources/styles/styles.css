@@ -1,0 +1,58 @@
+*{
+	padding:0;
+	margin:0;
+/*	cursor:none;
+*/}
+
+#hiddenAssets{
+	display:none;
+}
+
+body{
+	overflow:hidden;
+	position: relative;
+}
+
+canvas{
+	cursor:none;
+}
+
+#energy{
+	position: absolute;
+	width: 14em;
+	height:1.5em;
+	top:1em;
+	left:calc(50% - 7em);
+	border-radius: 1em;
+	z-index:1;
+    overflow: hidden;
+}
+
+#mapCanvas{
+	z-index: 1;
+	position: absolute;
+	top:0;
+	right:0;
+}
+
+#canvas{
+	z-index: 2;
+	position: absolute;
+	top:0;
+	right:0;
+}
+
+	#eBar, #eBack{
+		width:100%;
+		height:100%;
+		background: #3A539B;	
+		position:absolute;
+	}
+
+		#eBack{
+			opacity:.3;
+		}
+
+		#eBar{
+			opacity: .8
+		}

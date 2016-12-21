@@ -2,13 +2,22 @@ var Tile = function(coord, info){
 	this.coord = coord;
 	this.texture;
 	this.fill;
+	this.material;
 
-	if (info && 'fill' in info){
-		this.fill = info.fill
-	}
+	if (info){
+		if ('fill' in info){
+			this.fill = info.fill
+		}
 
-	if (info && 'texture' in info){
-		this.texture = info.texture;
+		if ('texture' in info){
+			this.texture = info.texture;
+		}
+
+		if ('material' in info){
+			this.material = info.material;
+		}else{
+			this.material = 'pass';
+		}
 	}
 }
 

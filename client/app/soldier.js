@@ -1,4 +1,4 @@
-var Soldier = function(){
+var Soldier = function(updateBullet){
 	this.renderPos = [
 		window.innerWidth/2,
 		window.innerHeight/2
@@ -8,39 +8,66 @@ var Soldier = function(){
 	]
 	this.sprites = {};
 	this.dir = 'b1';
-	this.speed = 1;
-	this.gun = new Gun();
+	this.gun = new Gun(updateBullet);
 	this.frame = 1;
 	this.motion = {
-		'status': false,
-		'counter': 0,
-		'cap': 5,
+		'fCounter': 0,
+		'fRate': 8,
+		'boost': false,
+		'speed': 5,
+		'bRate': 1.5,
+		'dirs': {
+			'left': false,
+			'up': false,
+			'right': false,
+			'down': false
+		}
 	}
 }
 
 Soldier.prototype.watchForMovement = function(){
-	var self = this;
+	var keyDown,
+		self = this,
+		moveKeys = {
+			'left': 65,
+			'up': 87,
+			'right': 68,
+			'down': 83,
+			'boost': 16
+		};
+
 
 	document.addEventListener('keydown', function(e){
-		console.log('press key', e.keyCode);
-		var m = move(e.keyCode, self.mapPos, self.speed)
-		self.mapPos = m.pos;
-		self.motion.status = m.motion;
-		console.log("afterPress", m)
+		if (!keyDown || keyDown != e.keyCode){
+			keyDown = e.keyCode;
+			for (var k in moveKeys){
+				if (moveKeys[k] == keyDown){
+					self.motion.dirs[k] = true;
+					break;
+				}
+			}
+		}
 	});
 
 	document.addEventListener('keyup', function(e){
-		var m = halt(e.keyCode, self.mapPos, self.speed);
-		self.mapPos = m.pos;
-		self.motion.status = m.motion;
-		console.log("afterHalt", m)
+		var keyUp = e.keyCode;
+		if (keyUp == keyDown){
+			keyDown = undefined;
+		}
+
+		for (var k in moveKeys){
+			if (moveKeys[k] == keyUp){
+				self.motion.dirs[k] = false;
+				break;
+			}
+		}
 	});
 };
 
 Soldier.prototype.update = function(context, offset, scale, cursor){
 	var coord = [
-		((window.innerWidth/2)/scale) + offset[0],
-		((window.innerHeight/2)/scale) + offset[1]
+		((window.innerWidth/2)/scale) + offset.pan[0],
+		((window.innerHeight/2)/scale) + offset.pan[1]
 	];
 
 	cursor = [
@@ -49,7 +76,27 @@ Soldier.prototype.update = function(context, offset, scale, cursor){
 	]
 
 	this.dir = faceDir(cursor, coord, scale);
-	var img = this.sprites[this.dir + '1'];
+
+	var mInfo = updateMapPostion(this.motion, this.mapPos);
+	if (mInfo.status){
+		this.mapPos = mInfo.pos;
+		if (this.motion.fCounter == 0){
+			this.motion.fCounter = this.motion.fRate;
+
+			if (this.frame < 2){
+				this.frame++;
+			}else{
+				this.frame = 0;
+			}
+		}else{
+			this.motion.fCounter--;
+		}
+	}else{
+		this.motion.fCounter = 0;
+		this.frame = 1;
+	}
+	console.log(this.frame);
+	var img = this.sprites[this.dir + this.frame.toString()];
 
 	context.imageSmoothingEnabled = true;
 
@@ -72,130 +119,54 @@ Soldier.prototype.update = function(context, offset, scale, cursor){
 	}
 }
 
+function updateMapPostion(moveInfo, map){
+	var s = moveInfo.speed,
+		dir = moveInfo.dirs,
+		u = [0, 0]
 
-//65 -> A -> Left
-//87 -> W -> Up
-//68 -> D -> Right
-//83 -> S -> Down
-
-function move(key, mapPos, speed){
-	var s = speed,
-		v = 6 * Math.cos(45),
-		m = [0, 0];
-
-	switch (key){
-		case 65:
-			if (m[1] > 0){
-				m = [-v, v];
-			}else if (m[1] < 0){
-				m = [-v, -v];
-			}else{
-				m = [-s, 0];
-			}
-
-			break;
-
-		case 68:
-			if (m[1] > 0){
-				m = [v, v];
-			}else if (m[1] < 0){
-				m = [v, -v];
-			}else{
-				m = [s, 0];
-			}
-
-			break;
-
-		case 87:
-			if (m[0] > 0){
-				m = [v, v];
-			}else if (m[0] < 0){
-				m = [-v, v];
-			}else{
-				m = [0, s];
-			}
-
-			break;
-
-		case 83:
-			if (m[0] > 0){
-				m = [v, -v];
-			}else if (m[0] < 0){
-				m = [-v, -v];
-			}else{
-				m = [0, -s];
-			}
-
-			break;
+	if (moveInfo.boost){
+		s *= moveInfo.bRate;
 	}
 
-	return { 
-		'pos': [
-			mapPos[0] - m[0],
-			mapPos[1] - m[1]
-		],
-		'motion': m[0] != 0 || m[1] != 0
-	};
-}
+	var v = s * Math.cos(45);
 
-function halt(key, mapPos, speed){
-	var s = speed,
-		m = [0, 0];
-
-	switch (key){
-		case 65:
-			if (m[1] > 0){
-				m = [0, s];
-			}else if (m[1] < 0){
-				m = [0, -s];
-			}else{
-				m = [0, 0];
-			}
-
-			break;
-
-		case 68:
-			if (m[1] > 0){
-				m = [0, s];
-			}else if (m[1] < 0){
-				m = [0, s];
-			}else{
-				m = [s, 0];
-			}
-
-			break;
-
-		case 87:
-			if (m[0] > 0){
-				m = [0, s];
-			}else if (m[0] < 0){
-				m = [0, s];
-			}else{
-				m = [0, 0];
-			}
-
-			break;
-
-		case 83:
-			if (m[0] > 0){
-				m = [s, 0];
-			}else if (m[0] < 0){
-				m = [-s, 0];
-			}else{
-				m = [0, 0];
-			}
-
-			break;
+	if (dir.left){
+		if (dir.up){
+			u = [-v, v];
+		}else if (dir.down){
+			u = [-v, -v];
+		}else if (!dir.right){
+			u = [-s, 0];
+		}
+	}else if (dir.right){
+		if (dir.up){
+			u = [v, v];
+		}else if (dir.down){
+			u = [v, -v];
+		}else{
+			u = [s, 0];
+		}
+	}else if (dir.up){
+		if (!dir.down){
+			u = [0, s];
+		}
+	}else if (dir.down){
+		u = [0, -s];
 	}
 
-	return{
-		'pos': [
-			mapPos[0] - m[0],
-			mapPos[1] - m[1]
-		], 
-		'motion': m[0] != 0 || m[1] != 0
-	};
+	if (u[0] == 0 && u[0] == u[1]){
+		return {'status': false}
+	}else{
+		return {
+			'status': true,
+			'pos': [
+				map[0] + u[0],
+				map[1] + u[1]
+			]
+		}
+	}
 }
+
 
 Soldier.prototype.collectSprites = function(){
 	var dirs = ['b', 'f', 'l', 'r'];

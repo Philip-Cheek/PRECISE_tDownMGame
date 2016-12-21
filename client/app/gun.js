@@ -1,13 +1,13 @@
-var Gun = function(){
+var Gun = function(updateBullet){
 	this.sprites = {};
-	this.bulletQueue = [];
 	this.fireRate = 15;
 	this.rateCounter = this.fireRate;
 	this.fireSpeed = 10;
 	this.fire = false;
+	this.updateBullet = updateBullet;
 }
 
-Gun.prototype.updateGun = function(dir, context, coord, cursor, scale, panOffset){
+Gun.prototype.updateGun = function(dir, context, coord, cursor, scale, offsetInfo){
 	var img = this.sprites[dir].img,
 		point = [
 			coord[0] + (this.dir[dir].point[0]),
@@ -31,7 +31,7 @@ Gun.prototype.updateGun = function(dir, context, coord, cursor, scale, panOffset
 	this.handleFire(
 		dir, gunAngle, point, 
 		coord, arc, cursor, 
-		context, panOffset
+		context, offsetInfo
 	);
 };
 
@@ -41,7 +41,7 @@ Gun.prototype.handleFire = function(dir, theta, point, origin, arc, cursor, cont
 
 	if (this.fire && eBar.offsetWidth > 0){
 		if (this.rateCounter == this.fireRate){
-			this.bulletQueue.push(
+			this.updateBullet(
 				new Bullet(
 					this.dir[dir].bCoord,
 					theta,
@@ -65,15 +65,6 @@ Gun.prototype.handleFire = function(dir, theta, point, origin, arc, cursor, cont
 			this.rateCounter = this.fireRate;
 		}else{
 			this.rateCounter--;
-		}
-	}
-
-	for (var i = this.bulletQueue.length - 1; i >- 0; i--){
-		var bullet = this.bulletQueue[i];
-		if (bullet.range > 0){
-			bullet.update(context, offset);
-		}else{
-			this.bulletQueue.splice(i, 1);
 		}
 	}
 }

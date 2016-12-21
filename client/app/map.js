@@ -15,7 +15,7 @@ Map.prototype.demoAssemble = function(scale){
 		var row = [];
 		for (var c = 0; c < 10; c++){
 			if (r == 0 || r == 9 || c == 0 || c == 9){
-				tile = new Tile([r * 100, c * 100], {'fill': '#00ced1'});
+				tile = new Tile([r * 100, c * 100], {'fill': '#00ced1', 'material': 'reflect'});
 				row.push(tile);
 			}else{
 				tile = new Tile([r * 100, c * 100], {'texture': granite})
@@ -27,6 +27,23 @@ Map.prototype.demoAssemble = function(scale){
 	}
 }
 
+Map.prototype.produceRelevantTile = function(coord){
+	console.log(coord);
+	for (var i = 0; i < this.tileSheet.length; i++){
+		var row = this.tileSheet[i]
+		for (var c = 0; c < row.length; c++){
+			var tCoord = row[c].coord;
+			inWidth = coord[0] >= tCoord[0] && coord[0] <= tCoord[0] + 100;
+			inHeight = coord[1] <= tCoord[1] && coord[1] >= tCoord[1] - 100;
+
+			if (inWidth && inHeight){
+				console.log('we in');
+				row[c].fill = 'pink';
+				return row[c];
+			}
+		}
+	}
+} 
 Map.prototype.draw = function(offset){
 
 	if ((this.offset[0] == 0 && this.offset[1] == 0) || offset[0] != this.offset[0] || offset[1] != this.offset[1]){

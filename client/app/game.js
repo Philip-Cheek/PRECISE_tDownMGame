@@ -1,7 +1,12 @@
 var Game = function(canvasID, crossID, mapID){
+	var self = this;
+
 	this.canvas = document.getElementById(canvasID);
 	this.context = this.canvas.getContext('2d');
-	this.soldier = new Soldier();
+	this.bulletQueue = [];
+	this.soldier = new Soldier(function(bullet){
+		self.bulletQueue.push(bullet);
+	});
 	this.map = new Map([1000,1000], mapID);
 	this.camera = [];
 	this.cursor = [];
@@ -9,7 +14,7 @@ var Game = function(canvasID, crossID, mapID){
 	this.cross = document.getElementById(crossID);
 	this.crossScale = 1;
 	this.startTime = 0;
-	this.fps = 80
+	this.fps = 80;
 }
 
 Game.prototype.init = function(){
@@ -62,16 +67,21 @@ Game.prototype.start = function(){
 		
 			self.camera = adjustCamera();
 			setCanvas(canvas, context);
-			var camOffset = getMouseOffset(cursor, camera);
-			
+
+			var offset = getOffset(cursor, camera, self.soldier.mapPos);
+
 			context.save();
 			context.scale(scale, scale);
-			self.map.draw([
-				camOffset[0] - (0 + self.soldier.mapPos[0]),
-				camOffset[1] - (0 + self.soldier.mapPos[1])
-			]);
+
+			self.map.draw(offset.full);
 			self.drawCrosshairs();
-			self.soldier.update(context, camOffset, scale, cursor);
+			self.soldier.update(context, offset, scale, cursor);
+
+			updateBulletQueue(self.bulletQueue, self.map, {
+				'context': context,
+				'offset': offset.full
+			});
+
 			context.restore();
 
 		}
@@ -101,6 +111,35 @@ Game.prototype.drawCrosshairs = function(){
 	this.context.restore();
 }
 
+function updateBulletQueue(bQ, map, uInfo){
+	for (var i = bQ.length - 1; i >= 0; i--){
+		var bullet = bQ[i];
+		console.log(bQ[i]);
+		if (bullet && bullet.range > 0){
+			var rTile = map.produceRelevantTile(bullet.coord);
+			bullet.update(uInfo.context, uInfo.offset, rTile);
+		}else if (bullet){
+			bQ.splice(i, 1);
+		}
+	}
+
+}
+function getOffset(cursor, center, soldier, scale){
+	var mouseOffset = getMouseOffset(cursor, center),
+		mapOffset = [
+			0 - soldier[0],
+			0 + soldier[1]
+		];
+	
+	return {
+		'pan': mouseOffset,
+		'map': mapOffset,
+		'full': [
+			mouseOffset[0] + mapOffset[0],
+			mouseOffset[1] + mapOffset[1]
+		]
+	}
+}
 function getMouseOffset(cursor, center, scale){
 	if (cursor.length > 0){
 		var c = [
